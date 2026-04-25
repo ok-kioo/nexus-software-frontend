@@ -1,0 +1,12 @@
+node_modules
+.env
+*.log
+dist
+coverage
+.DS_Store
+playwright-report
+test-results
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
