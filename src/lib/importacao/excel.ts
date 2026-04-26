@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import {
   ENTITIES,
   ENTITY_ORDER,
@@ -43,16 +44,212 @@ export async function parseExcelFile(file: File): Promise<ParsedWorkbook> {
   return { fileName: file.name, sheets };
 }
 
-/** Gera modelo Excel oficial com 7 abas e cabeçalhos preenchidos */
-export function downloadOfficialTemplate(): void {
-  const wb = XLSX.utils.book_new();
+/**
+ * Linhas de exemplo realistas para cada entidade — uma por aba.
+ * Devem casar EXATAMENTE com a ordem das colunas em `ENTITIES[key].columns`.
+ */
+const EXAMPLE_ROWS: Record<EntityKey, (string | number)[]> = {
+  unidades: ["Polo Centro", "São Paulo", "SP", "ativa"],
+  cursos: ["Engenharia de Software", "Graduação", 3200, "ativo"],
+  turmas: [
+    "ESW-2026-1A",
+    "Polo Centro",
+    "Engenharia de Software",
+    40,
+    "2026.1",
+    "Noturno",
+    "ativa",
+  ],
+  alunos: [
+    "Maria da Silva",
+    "12345678901",
+    "2002-05-14",
+    "maria@exemplo.com",
+    "(11) 99999-0000",
+    "ativo",
+  ],
+  matriculas: [
+    "MAT2026001",
+    "Maria da Silva",
+    "ESW-2026-1A",
+    "ativa",
+    "2026-02-01",
+    "2026-12-15",
+  ],
+  frequencia: ["Maria da Silva", "ESW-2026-1A", "2026-03-10", "sim", ""],
+  notas: ["Maria da Silva", "ESW-2026-1A", 8.5, 7.0, 9.2, 8.0, "Excelente desempenho"],
+};
+
+/**
+ * Texto-instrução por entidade exibido na aba "Instruções" do modelo oficial.
+ * Mantém os mesmos formatos que o validador da página de importação aceita.
+ */
+const ENTITY_RULES: Record<EntityKey, string[]> = {
+  unidades: [
+    "estado: sigla com 2 letras (ex.: SP, RJ, MG)",
+    "status: ativa | inativa",
+  ],
+  cursos: [
+    "categoria: Graduação | Pós-Graduação | Técnico | Livre",
+    "carga_horaria: número inteiro em horas",
+    "status: ativo | inativo",
+  ],
+  turmas: [
+    "nome_unidade e nome_curso devem existir nas abas Unidades e Cursos",
+    "capacidade: número inteiro (vagas máximas)",
+    "periodo: AAAA.S (ex.: 2026.1)",
+    "turno: Manhã | Tarde | Noite | Integral",
+    "status: ativa | inativa",
+  ],
+  alunos: [
+    "documento (CPF): 11 dígitos numéricos, sem pontos ou traços",
+    "data_nascimento: AAAA-MM-DD ou DD/MM/AAAA",
+    "email: opcional, mas se preenchido deve ser válido",
+    "status: ativo | inativo",
+  ],
+  matriculas: [
+    "numero_matricula: único em todo o sistema",
+    "nome_aluno e nome_turma: devem existir nas abas Alunos e Turmas",
+    "status: ativa | trancada | concluida | cancelada",
+    "data_inicio / data_fim: AAAA-MM-DD ou DD/MM/AAAA",
+  ],
+  frequencia: [
+    "data: AAAA-MM-DD ou DD/MM/AAAA",
+    "presente: aceita sim | não | true | false | 1 | 0 | presente | ausente",
+    "observacao: opcional",
+  ],
+  notas: [
+    "Cada nota deve estar entre 0 e 10 (use ponto como separador decimal)",
+    "Pelo menos UMA nota deve estar preenchida por linha",
+    "Todos os alunos da mesma turma devem ter a MESMA quantidade de notas preenchidas",
+    "observacao: opcional",
+  ],
+};
+
+/** Gera modelo Excel oficial com aba "Instruções" + 7 abas formatadas. */
+export async function downloadOfficialTemplate(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "Nexus";
+  wb.created = new Date();
+
+  // ── Aba 1: Instruções ────────────────────────────────────
+  const ws = wb.addWorksheet("Instruções", {
+    views: [{ showGridLines: false }],
+  });
+  ws.columns = [{ width: 4 }, { width: 28 }, { width: 90 }];
+
+  const titleRow = ws.addRow(["", "Modelo de Importação — Nexus", ""]);
+  titleRow.getCell(2).font = { bold: true, size: 16, color: { argb: "FF111827" } };
+  ws.addRow([]);
+  const subRow = ws.addRow([
+    "",
+    "",
+    "Este arquivo contém 7 abas, uma por entidade. Substitua as linhas de exemplo pelos seus dados.",
+  ]);
+  subRow.getCell(3).font = { italic: true, color: { argb: "FF6B7280" } };
+  ws.addRow([]);
+
+  const fmtHeader = ws.addRow(["", "Formatos aceitos", ""]);
+  fmtHeader.getCell(2).font = { bold: true, size: 12, color: { argb: "FF111827" } };
+
+  const generalRules: [string, string][] = [
+    ["Datas", "AAAA-MM-DD (ex.: 2026-03-10) ou DD/MM/AAAA (ex.: 10/03/2026)"],
+    ["UF (estado)", "Sigla com 2 letras: SP, RJ, MG, RS, etc."],
+    ["CPF (documento)", "11 dígitos numéricos, sem pontos ou traços"],
+    ["Booleanos (presente)", "sim | não | true | false | 1 | 0 | presente | ausente"],
+    ["Notas (0–10)", "Use ponto como separador decimal: 8.5, 9.0, 7.25"],
+    ["Status", "ativa/ativo ou inativa/inativo conforme a entidade"],
+    ["Codificação", "UTF-8. Salve sempre como .xlsx"],
+  ];
+  generalRules.forEach(([k, v]) => {
+    const r = ws.addRow(["", k, v]);
+    r.getCell(2).font = { bold: true };
+    r.getCell(3).alignment = { wrapText: true, vertical: "top" };
+  });
+
+  ws.addRow([]);
+  const entHeader = ws.addRow(["", "Regras por entidade", ""]);
+  entHeader.getCell(2).font = { bold: true, size: 12, color: { argb: "FF111827" } };
+
   ENTITY_ORDER.forEach((key) => {
     const ent = ENTITIES[key];
-    // cabeçalhos + 1 linha vazia de exemplo
-    const ws = XLSX.utils.aoa_to_sheet([ent.columns, ent.columns.map(() => "")]);
-    XLSX.utils.book_append_sheet(wb, ws, ent.label);
+    ws.addRow([]);
+    const r = ws.addRow(["", ent.label, ent.description]);
+    r.getCell(2).font = { bold: true, color: { argb: "FF1F2937" } };
+    r.getCell(3).font = { italic: true, color: { argb: "FF6B7280" } };
+    const cols = ws.addRow([
+      "",
+      "Colunas",
+      ent.columns
+        .map((c) => (ent.required.includes(c) ? `${c} (obrigatório)` : c))
+        .join(", "),
+    ]);
+    cols.getCell(3).alignment = { wrapText: true, vertical: "top" };
+    ENTITY_RULES[key].forEach((rule) => {
+      const rr = ws.addRow(["", "•", rule]);
+      rr.getCell(3).alignment = { wrapText: true, vertical: "top" };
+    });
   });
-  XLSX.writeFile(wb, "modelo_importacao_nexus.xlsx");
+
+  // ── 7 abas das entidades ─────────────────────────────────
+  ENTITY_ORDER.forEach((key) => {
+    const ent = ENTITIES[key];
+    const sheet = wb.addWorksheet(ent.label, {
+      views: [{ state: "frozen", ySplit: 1 }],
+    });
+
+    sheet.columns = ent.columns.map((c) => ({
+      header: c,
+      key: c,
+      width: Math.max(16, c.length + 4),
+    }));
+
+    // Cabeçalho formatado: negrito + fundo cinza
+    const header = sheet.getRow(1);
+    header.values = ent.columns;
+    header.font = { bold: true, color: { argb: "FF111827" } };
+    header.alignment = { vertical: "middle", horizontal: "left" };
+    header.height = 22;
+    ent.columns.forEach((_, i) => {
+      const cell = header.getCell(i + 1);
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE5E7EB" },
+      };
+      cell.border = {
+        bottom: { style: "thin", color: { argb: "FFD1D5DB" } },
+      };
+    });
+
+    // Linha 2: exemplo realista
+    const example = EXAMPLE_ROWS[key];
+    const exRow = sheet.addRow(example);
+    exRow.font = { color: { argb: "FF6B7280" }, italic: true };
+    exRow.eachCell((cell) => {
+      cell.alignment = { vertical: "middle", horizontal: "left" };
+    });
+
+    // AutoFilter no cabeçalho
+    sheet.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: 1, column: ent.columns.length },
+    };
+  });
+
+  // ── Download ─────────────────────────────────────────────
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "modelo_importacao_nexus.xlsx";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 export interface ColumnMap {

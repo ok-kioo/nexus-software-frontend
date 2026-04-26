@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Building2, BookOpen, Users, Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Plus, Pencil, Trash2, Building2, BookOpen, Users, Loader2, Upload } from "lucide-react";
 import { PageHeader } from "@/components/reusable/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -119,9 +120,14 @@ function UnidadesTab({ search, canManage, canDelete }: { search: string; canMana
             title={search ? "Nenhum resultado para sua busca" : "Nenhuma unidade cadastrada"}
             description={search ? "Tente outros termos ou limpe a busca." : "Comece adicionando a primeira unidade da rede."}
             action={!search && canManage && (
-              <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
-                <Plus className="h-4 w-4 mr-1" /> Nova Unidade
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
+                  <Plus className="h-4 w-4 mr-1" /> Nova Unidade
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/importar"><Upload className="h-4 w-4 mr-1" /> Importar Dados</Link>
+                </Button>
+              </div>
             )}
           />
         ) : (
@@ -221,9 +227,14 @@ function CursosTab({ search, canManage, canDelete }: { search: string; canManage
             title={search ? "Nenhum resultado para sua busca" : "Nenhum curso cadastrado"}
             description={search ? "Tente outros termos ou limpe a busca." : "Adicione cursos para vincular às turmas."}
             action={!search && canManage && (
-              <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
-                <Plus className="h-4 w-4 mr-1" /> Novo Curso
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
+                  <Plus className="h-4 w-4 mr-1" /> Novo Curso
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/importar"><Upload className="h-4 w-4 mr-1" /> Importar Dados</Link>
+                </Button>
+              </div>
             )}
           />
         ) : (
@@ -317,9 +328,14 @@ function AlunosTab({ search, canManage, canDelete }: { search: string; canManage
             title={search ? "Nenhum resultado para sua busca" : "Nenhum aluno cadastrado"}
             description={search ? "Tente outros termos ou limpe a busca." : "Cadastre alunos manualmente ou use Importar para carregar uma planilha."}
             action={!search && canManage && (
-              <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
-                <Plus className="h-4 w-4 mr-1" /> Novo Aluno
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
+                  <Plus className="h-4 w-4 mr-1" /> Novo Aluno
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/importar"><Upload className="h-4 w-4 mr-1" /> Importar Dados</Link>
+                </Button>
+              </div>
             )}
           />
         ) : (

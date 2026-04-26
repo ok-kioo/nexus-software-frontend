@@ -176,7 +176,7 @@ const sections: GuideSection[] = [
   {
     id: "importar",
     title: "Importar",
-    description: "Carga de dados via planilha Excel padronizada.",
+    description: "Carga de dados via planilha Excel padronizada — processamento em background com lotes paralelos.",
     icon: Upload,
     route: "/importar",
     audience: ["administrador", "gestor"],
@@ -184,8 +184,14 @@ const sections: GuideSection[] = [
       "Na primeira importação, envie a base completa (7 abas).",
       "Depois é possível importar abas individualmente.",
       "Erros de validação são exibidos linha a linha.",
+      "Use 'Enviar para servidor (assíncrono)' para arquivos grandes: o upload retorna imediatamente e o processamento continua em segundo plano.",
+      "O servidor divide o arquivo em lotes (chunks) e processa vários lotes em paralelo, acelerando importações com milhares de linhas.",
+      "Acompanhe o progresso pelo cartão de status no topo da página ou pelo indicador no menu lateral — você pode navegar para outras telas enquanto roda.",
     ],
-    tips: ["Baixe o modelo de planilha antes de preencher para garantir o formato correto."],
+    tips: [
+      "Baixe o modelo Excel oficial: ele já vem com a aba 'Instruções', cabeçalhos formatados e uma linha de exemplo realista por entidade.",
+      "Importações em background sobrevivem a F5 e troca de página — só não feche a aba antes do upload terminar.",
+    ],
   },
   {
     id: "exportar",

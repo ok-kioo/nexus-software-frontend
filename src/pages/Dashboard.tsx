@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Users, TrendingDown, CalendarCheck, Award, X } from "lucide-react";
+import { Users, TrendingDown, CalendarCheck, Award, X, Database } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { PageHeader } from "@/components/reusable/PageHeader";
 import { KPICard } from "@/components/reusable/KPICard";
@@ -11,6 +11,8 @@ import { useAnalytics, deriveDashboard, unitColorFor } from "@/hooks/useAnalytic
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/reusable/EmptyState";
+import { useAuth } from "@/contexts/AuthContext";
 
 const kpiIcons = [
   <Users className="h-4 w-4" />,
@@ -22,6 +24,8 @@ const kpiIcons = [
 export default function Dashboard() {
   const { data: base, isLoading } = useAnalytics();
   const [filters, setFilters] = useState({ unit: "all", period: "all" });
+  const { role } = useAuth();
+  const canImport = role === "administrador" || role === "gestor";
 
   const filteredBase = useMemo(() => {
     if (!base) return base;
@@ -46,6 +50,26 @@ export default function Dashboard() {
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
         </div>
         <Skeleton className="h-[280px] mb-6" />
+      </div>
+    );
+  }
+
+  // Estado vazio real: requisição concluída e ainda não há matrículas no sistema.
+  if (base.matriculas.length === 0) {
+    return (
+      <div>
+        <PageHeader title="Painéis Gerenciais" subtitle="Visão geral da rede de ensino" />
+        <Card>
+          <CardContent className="p-0">
+            <EmptyState
+              icon={<Database className="h-7 w-7 text-primary" />}
+              title="Você ainda não possui registros cadastrados"
+              description="Para visualizar os indicadores da rede é necessário importar os dados da instituição primeiro."
+              actionLabel={canImport ? "Importar Dados" : undefined}
+              actionRoute={canImport ? "/importar" : undefined}
+            />
+          </CardContent>
+        </Card>
       </div>
     );
   }

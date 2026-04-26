@@ -47,6 +47,46 @@ import {
   ENTITY_ORDER,
   EntityKey,
 } from "@/lib/importacao/schema";
+/** Regras de preenchimento exibidas em cada card de entidade. */
+const ENTITY_FILL_RULES: Record<EntityKey, string[]> = {
+  unidades: [
+    "estado: sigla com 2 letras (SP, RJ, MG…)",
+    "status: ativa | inativa",
+  ],
+  cursos: [
+    "categoria: Graduação | Pós-Graduação | Técnico | Livre",
+    "carga_horaria: número inteiro (horas)",
+    "status: ativo | inativo",
+  ],
+  turmas: [
+    "nome_unidade e nome_curso devem existir nas abas correspondentes",
+    "capacidade: número inteiro de vagas",
+    "periodo: AAAA.S (ex.: 2026.1)",
+    "turno: Manhã | Tarde | Noite | Integral",
+  ],
+  alunos: [
+    "documento (CPF): 11 dígitos numéricos, sem pontos/traços",
+    "data_nascimento: AAAA-MM-DD ou DD/MM/AAAA",
+    "email opcional, mas se preenchido deve ser válido",
+  ],
+  matriculas: [
+    "numero_matricula: único em todo o sistema",
+    "nome_aluno e nome_turma devem existir",
+    "data_inicio / data_fim: AAAA-MM-DD ou DD/MM/AAAA",
+    "status: ativa | trancada | concluida | cancelada",
+  ],
+  frequencia: [
+    "data: AAAA-MM-DD ou DD/MM/AAAA",
+    "presente aceita: sim | não | true | false | 1 | 0",
+    "observacao opcional",
+  ],
+  notas: [
+    "Cada nota entre 0 e 10 (use ponto como separador decimal)",
+    "Pelo menos 1 nota preenchida por aluno",
+    "Mesma quantidade de notas para todos os alunos da turma",
+  ],
+};
+
 import {
   ColumnMap,
   ParsedSheet,
@@ -329,7 +369,17 @@ export default function Importar() {
 
       {/* Ações topo */}
       <div className="flex flex-wrap gap-3 mb-6">
-        <Button variant="outline" onClick={() => downloadOfficialTemplate()}>
+        <Button
+          variant="outline"
+          onClick={async () => {
+            try {
+              await downloadOfficialTemplate();
+            } catch (e) {
+              console.error(e);
+              toast.error("Não foi possível gerar o modelo. Tente novamente.");
+            }
+          }}
+        >
           <Download className="h-4 w-4 mr-2" />
           Baixar Modelo Excel Oficial
         </Button>
@@ -494,10 +544,11 @@ export default function Importar() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {ENTITY_ORDER.map((k) => {
                   const ent = ENTITIES[k];
+                  const rules = ENTITY_FILL_RULES[k];
                   return (
                     <div
                       key={k}
-                      className="rounded-md border border-border p-3 bg-muted/30"
+                      className="rounded-md border border-border p-3 bg-muted/30 flex flex-col"
                     >
                       <div className="flex items-center justify-between mb-1">
                         <p className="text-sm font-medium text-foreground">
@@ -510,9 +561,20 @@ export default function Importar() {
                       <p className="text-xs text-muted-foreground mb-2">
                         {ent.description}
                       </p>
-                      <p className="text-[11px] text-muted-foreground/80 font-mono leading-relaxed">
+                      <p className="text-[11px] text-muted-foreground/80 font-mono leading-relaxed mb-3">
                         {ent.columns.join(", ")}
                       </p>
+                      <div className="mt-auto pt-2 border-t border-border/60">
+                        <p className="text-[11px] font-semibold text-foreground/90 mb-1 flex items-center gap-1">
+                          <Info className="h-3 w-3 text-primary" />
+                          Regras de preenchimento
+                        </p>
+                        <ul className="text-[11px] text-muted-foreground space-y-0.5 list-disc pl-4">
+                          {rules.map((r, i) => (
+                            <li key={i}>{r}</li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   );
                 })}

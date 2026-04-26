@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ShieldAlert, TrendingDown, Users, CalendarX, Phone, X } from "lucide-react";
+import { ShieldAlert, TrendingDown, Users, CalendarX, Phone, X, Database } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { PageHeader } from "@/components/reusable/PageHeader";
 import { KPICard } from "@/components/reusable/KPICard";
@@ -11,6 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAnalytics, derivePermanencia } from "@/hooks/useAnalytics";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/reusable/EmptyState";
+import { useAuth } from "@/contexts/AuthContext";
 
 const kpiIcons = [
   <TrendingDown className="h-4 w-4" />,
@@ -22,6 +24,7 @@ const kpiIcons = [
 export default function Permanencia() {
   const { data: base, isLoading } = useAnalytics();
   const [filters, setFilters] = useState({ unit: "all", course: "all", period: "all" });
+  const { role } = useAuth();
 
   const filteredBase = useMemo(() => {
     if (!base) return base;
@@ -47,6 +50,27 @@ export default function Permanencia() {
       </div>
     );
   }
+
+  if (base.matriculas.length === 0) {
+    const canImport = role === "administrador" || role === "gestor";
+    return (
+      <div>
+        <PageHeader title="Indicadores de Permanência" subtitle="Evasão, retenção e alunos em risco" />
+        <Card>
+          <CardContent className="p-0">
+            <EmptyState
+              icon={<Database className="h-7 w-7 text-primary" />}
+              title="Você ainda não possui registros cadastrados"
+              description="Para visualizar os indicadores de permanência é necessário importar os dados da instituição primeiro."
+              actionLabel={canImport ? "Importar Dados" : undefined}
+              actionRoute={canImport ? "/importar" : undefined}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const { kpis, dropoutEvolution, dropoutByUnit, dropoutByCourse, risco } = derivePermanencia(filteredBase);
   const activeCount = Object.values(filters).filter((v) => v !== "all").length;
   const handleFilterChange = (key: string, value: string) =>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Users, TrendingUp, Building2, Plus, Pencil, Trash2, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Users, TrendingUp, Building2, Plus, Pencil, Trash2, X, Upload } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { PageHeader } from "@/components/reusable/PageHeader";
 import { KPICard } from "@/components/reusable/KPICard";
@@ -223,9 +224,14 @@ export default function Matriculas() {
                       title={(debouncedSearch || statusFilter !== "all" || dataInicio || dataFim) ? "Nenhum resultado para os filtros" : "Nenhuma matrícula cadastrada"}
                       description={(debouncedSearch || statusFilter !== "all" || dataInicio || dataFim) ? "Ajuste ou limpe os filtros para ver mais resultados." : "Crie a primeira matrícula vinculando um aluno a uma turma."}
                       action={!(debouncedSearch || statusFilter !== "all" || dataInicio || dataFim) && canManage && (
-                        <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
-                          <Plus className="h-4 w-4 mr-1" /> Nova Matrícula
-                        </Button>
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                          <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
+                            <Plus className="h-4 w-4 mr-1" /> Nova Matrícula
+                          </Button>
+                          <Button size="sm" variant="outline" asChild>
+                            <Link to="/importar"><Upload className="h-4 w-4 mr-1" /> Importar Dados</Link>
+                          </Button>
+                        </div>
                       )}
                     />
                   </TableCell></TableRow>

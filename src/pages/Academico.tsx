@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useMemo, useState } from "react";
-import { Award, TrendingUp, TrendingDown, AlertTriangle, X } from "lucide-react";
+import { Award, TrendingUp, TrendingDown, AlertTriangle, X, Database } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { PageHeader } from "@/components/reusable/PageHeader";
 import { KPICard } from "@/components/reusable/KPICard";
@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAnalytics, deriveAcademico, unitColorFor } from "@/hooks/useAnalytics";
+import { EmptyState } from "@/components/reusable/EmptyState";
 
 const kpiIcons = [
   <Award className="h-4 w-4" />,
@@ -50,6 +51,26 @@ export default function Academico() {
       <div>
         <PageHeader title="Indicadores Acadêmicos" subtitle="Desempenho e frequência da rede" />
         <Skeleton className="h-24" />
+      </div>
+    );
+  }
+
+  if (base.matriculas.length === 0) {
+    const canImport = role === "administrador" || role === "gestor";
+    return (
+      <div>
+        <PageHeader title="Indicadores Acadêmicos" subtitle="Desempenho e frequência da rede" />
+        <Card>
+          <CardContent className="p-0">
+            <EmptyState
+              icon={<Database className="h-7 w-7 text-primary" />}
+              title="Você ainda não possui registros cadastrados"
+              description="Para visualizar os indicadores acadêmicos é necessário importar os dados da instituição primeiro."
+              actionLabel={canImport ? "Importar Dados" : undefined}
+              actionRoute={canImport ? "/importar" : undefined}
+            />
+          </CardContent>
+        </Card>
       </div>
     );
   }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Plus, Pencil, Trash2, Upload } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { PageHeader } from "@/components/reusable/PageHeader";
 import { ChartCard } from "@/components/reusable/ChartCard";
@@ -109,9 +110,14 @@ export default function Turmas() {
           title={debouncedSearch ? "Nenhum resultado para sua busca" : "Nenhuma turma cadastrada"}
           description={debouncedSearch ? "Tente outros termos ou limpe a busca." : "Crie a primeira turma para começar a vincular alunos e professores."}
           action={!debouncedSearch && canManage && (
-            <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
-              <Plus className="h-4 w-4 mr-1" /> Nova Turma
-            </Button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
+                <Plus className="h-4 w-4 mr-1" /> Nova Turma
+              </Button>
+              <Button size="sm" variant="outline" asChild>
+                <Link to="/importar"><Upload className="h-4 w-4 mr-1" /> Importar Dados</Link>
+              </Button>
+            </div>
           )}
         />
       ) : (
