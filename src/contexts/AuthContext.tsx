@@ -31,6 +31,7 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string, role?: UserRole) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
   clearAuthError: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -44,6 +45,7 @@ const AuthContext = createContext<AuthContextType>({
   signup: async () => ({ ok: false }),
   logout: async () => {},
   clearAuthError: () => {},
+  refreshUser: async () => {},
 });
 
 async function loadAppUser(supaUser: SupabaseUser): Promise<AppUser> {
@@ -116,8 +118,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return unsubscribe;
+    // ── Sincronização entre abas ──────────────────────────────
+    // Se outro usuário fizer login em outra aba (token muda no storage),
+    // recarregamos a página para evitar vazamento de dados/contexto.
+    let lastTokenSnapshot: string | null = null;
+    const SUPA_KEY_PREFIX = "sb-";
+    try {
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (k && k.startsWith(SUPA_KEY_PREFIX) && k.endsWith("-auth-token")) {
+          lastTokenSnapshot = window.localStorage.getItem(k);
+          break;
+        }
+      }
+    } catch { /* ignore */ }
+
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key || !e.key.startsWith(SUPA_KEY_PREFIX) || !e.key.endsWith("-auth-token")) return;
+      // Se o valor mudou de fato (login/logout em outra aba), recarrega.
+      if (e.newValue !== lastTokenSnapshot) {
+        lastTokenSnapshot = e.newValue;
+        window.location.reload();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel("nexus-auth");
+      bc.onmessage = (msg) => {
+        if (msg.data?.type === "auth-changed") {
+          window.location.reload();
+        }
+      };
+    } catch { /* BroadcastChannel pode não existir em alguns navegadores */ }
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener("storage", onStorage);
+      bc?.close();
+    };
   }, []);
+
+  const broadcastAuthChange = () => {
+    try {
+      const bc = new BroadcastChannel("nexus-auth");
+      bc.postMessage({ type: "auth-changed" });
+      bc.close();
+    } catch { /* ignore */ }
+  };
+
+  const refreshUser = async () => {
+    if (!session?.user) return;
+    try {
+      const u = await loadAppUser(session.user);
+      setUser(u);
+      setAuthError(null);
+    } catch (err) {
+      setAuthError(describeAuthLoadError(err));
+    }
+  };
 
   const login = async (email: string, password: string) => {
     setAuthError(null);
@@ -128,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const appUser = await loadAppUser(data.user);
         setUser(appUser);
         setSession(data.session);
+        broadcastAuthChange();
       } catch (err) {
          // Servidor indisponível ou erro ao carregar perfil: aborta a sessão
         // para não deixar o app em estado quebrado (sem role/perfil).
@@ -156,6 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setAuthError(null);
+    broadcastAuthChange();
   };
 
   return (
@@ -171,6 +233,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signup,
         logout,
         clearAuthError: () => setAuthError(null),
+        refreshUser,
       }}
     >
       {children}

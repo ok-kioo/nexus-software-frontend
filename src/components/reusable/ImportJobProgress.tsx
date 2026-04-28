@@ -63,8 +63,8 @@ export function ImportJobProgress({ jobId, onFinished }: Props) {
     );
   }
 
-  if (isTerminal && onFinished) {
-    // dispara callback uma vez por mudança de status terminal
+  if (isTerminal && onFinished && job.status === "completed") {
+    // só dispara em sucesso real — failed/cancelled NÃO avançam o stepper.
     queueMicrotask(onFinished);
   }
 

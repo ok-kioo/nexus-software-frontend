@@ -1,25 +1,72 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { PageHeader } from "@/components/reusable/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Sun, Moon, Monitor, Lock, Info, Eye, EyeOff } from "lucide-react";
+import { updateMe, changeOwnPassword } from "@/lib/api/users";
+import { ApiError } from "@/lib/api/client";
+
+type PasswordInputProps = {
+  value: string;
+  onChange: (v: string) => void;
+  show: boolean;
+  onToggle: () => void;
+  id: string;
+  placeholder: string;
+};
+
+function PasswordInput({
+  value,
+  onChange,
+  show,
+  onToggle,
+  id,
+  placeholder,
+}: PasswordInputProps) {
+  return (
+    <div className="relative">
+      <Input
+        id={id}
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="mt-1.5 bg-muted/50 pr-10"
+      />
+
+      <button
+        type="button"
+        onClick={onToggle}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+        aria-label={show ? "Ocultar senha" : "Mostrar senha"}
+      >
+        {show ? (
+          <EyeOff className="h-4 w-4" />
+        ) : (
+          <Eye className="h-4 w-4" />
+        )}
+      </button>
+    </div>
+  );
+}
 
 export default function Configuracoes() {
-  const { user, role } = useAuth();
+  const { user, role, refreshUser } = useAuth();
   const { mode, theme, setMode } = useTheme();
   const { toast } = useToast();
   const [name, setName] = useState(user?.name || "");
-  const [notifications, setNotifications] = useState({
-    evasao: true, frequencia: true, desempenho: false, importacoes: true,
-  });
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Sincroniza nome quando o user carrega (assíncrono).
+  useEffect(() => {
+    if (user?.name && !name) setName(user.name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.name]);
 
   // Password state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -32,8 +79,22 @@ export default function Configuracoes() {
 
   const isAdmin = role === "administrador";
 
-  const handleSave = () => {
-    toast({ title: "Configurações salvas", description: "Suas preferências foram atualizadas." });
+  const handleSave = async () => {
+    if (!name.trim()) {
+      toast({ title: "Erro", description: "Informe seu nome.", variant: "destructive" });
+      return;
+    }
+    setSavingProfile(true);
+    try {
+      await updateMe({ name: name.trim() });
+      await refreshUser();
+      toast({ title: "Perfil atualizado", description: "Suas informações foram salvas." });
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : (err as Error).message;
+      toast({ title: "Erro", description: msg ?? "Falha ao salvar.", variant: "destructive" });
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   const handlePasswordSave = async () => {
@@ -41,8 +102,12 @@ export default function Configuracoes() {
       toast({ title: "Erro", description: "Informe a senha atual.", variant: "destructive" });
       return;
     }
-    if (newPassword.length < 6) {
-      toast({ title: "Erro", description: "A nova senha deve ter pelo menos 6 caracteres.", variant: "destructive" });
+    if (newPassword.length < 8 || !/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
+      toast({
+        title: "Erro",
+        description: "A nova senha deve ter pelo menos 8 caracteres, com letras e números.",
+        variant: "destructive",
+      });
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -50,12 +115,18 @@ export default function Configuracoes() {
       return;
     }
     setSavingPassword(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setSavingPassword(false);
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    toast({ title: "Senha alterada", description: "Sua senha foi atualizada com sucesso." });
+    try {
+      await changeOwnPassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      toast({ title: "Senha alterada", description: "Sua senha foi atualizada com sucesso." });
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : (err as Error).message;
+      toast({ title: "Erro", description: msg ?? "Falha ao alterar senha.", variant: "destructive" });
+    } finally {
+      setSavingPassword(false);
+    }
   };
 
   const themeOptions = [
@@ -63,38 +134,6 @@ export default function Configuracoes() {
     { value: "dark" as const, label: "Escuro", icon: Moon },
     { value: "auto" as const, label: "Automático", icon: Monitor },
   ];
-
-  const notificationItems = role === "professor"
-    ? [{ key: "frequencia" as const, label: "Frequência Crítica" }]
-    : [
-        { key: "evasao" as const, label: "Risco de Evasão" },
-        { key: "frequencia" as const, label: "Frequência Crítica" },
-        { key: "desempenho" as const, label: "Queda de Desempenho" },
-        { key: "importacoes" as const, label: "Novas Importações" },
-      ];
-
-  const PasswordInput = ({ value, onChange, show, onToggle, id, placeholder }: {
-    value: string; onChange: (v: string) => void; show: boolean; onToggle: () => void; id: string; placeholder: string;
-  }) => (
-    <div className="relative">
-      <Input
-        id={id}
-        type={show ? "text" : "password"}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="mt-1.5 bg-muted/50 pr-10"
-      />
-      <button
-        type="button"
-        onClick={onToggle}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-        aria-label={show ? "Ocultar senha" : "Mostrar senha"}
-      >
-        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-      </button>
-    </div>
-  );
 
   return (
     <div>
@@ -143,8 +182,8 @@ export default function Configuracoes() {
                 </div>
               )}
             </div>
-            <Button onClick={handleSave}>
-              Salvar Alterações
+            <Button onClick={handleSave} disabled={savingProfile}>
+              {savingProfile ? "Salvando…" : "Salvar Alterações"}
             </Button>
           </CardContent>
         </Card>
@@ -163,9 +202,9 @@ export default function Configuracoes() {
               </div>
               <div>
                 <Label htmlFor="newPw">Nova Senha</Label>
-                <PasswordInput id="newPw" value={newPassword} onChange={setNewPassword} show={showNewPw} onToggle={() => setShowNewPw(!showNewPw)} placeholder="Mínimo 6 caracteres" />
-                {newPassword && newPassword.length < 6 && (
-                  <p className="text-xs text-destructive mt-1">Mínimo de 6 caracteres</p>
+                <PasswordInput id="newPw" value={newPassword} onChange={setNewPassword} show={showNewPw} onToggle={() => setShowNewPw(!showNewPw)} placeholder="Mínimo 8 caracteres, letras e números" />
+                {newPassword && (newPassword.length < 8 || !/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) && (
+                  <p className="text-xs text-destructive mt-1">Mínimo 8 caracteres, com letras e números</p>
                 )}
               </div>
               <div>
@@ -218,53 +257,6 @@ export default function Configuracoes() {
           </CardContent>
         </Card>
 
-        {/* Notifications */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Notificações</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {notificationItems.map((item) => (
-              <div key={item.key} className="flex items-center justify-between">
-                <Label htmlFor={item.key}>{item.label}</Label>
-                <Switch
-                  id={item.key}
-                  checked={notifications[item.key]}
-                  onCheckedChange={(v) => setNotifications((prev) => ({ ...prev, [item.key]: v }))}
-                />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Danger zone — admin only */}
-        {isAdmin && (
-          <Card className="border-destructive/30">
-            <CardHeader>
-              <CardTitle className="text-base text-destructive">Zona de perigo</CardTitle>
-              <CardDescription>Esta ação irá limpar todos os dados de demonstração.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive">Limpar dados de demonstração</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-                    <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => toast({ title: "Dados limpos", description: "Os dados de demonstração foram removidos." })}>
-                      Confirmar
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );

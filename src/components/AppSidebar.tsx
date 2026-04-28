@@ -180,8 +180,10 @@ export function AppSidebar() {
             onClick={() => setCmdOpen(true)}
             aria-label="Buscar páginas"
             title="Buscar páginas (Ctrl/Cmd + K)"
-            className={`group flex items-center gap-2 rounded-md border border-border bg-muted/30 hover:bg-muted/60 transition-colors ${
-              collapsed ? "h-9 w-9 justify-center" : "w-full h-9 px-2 text-xs text-muted-foreground"
+            className={`group flex items-center rounded-md border border-border bg-muted/30 hover:bg-muted/60 transition-colors ${
+              collapsed
+                ? "h-8 w-8 justify-center p-0"
+                : "w-full h-9 px-2 gap-2 text-xs text-muted-foreground"
             }`}
           >
             <Search className="h-4 w-4 shrink-0" />

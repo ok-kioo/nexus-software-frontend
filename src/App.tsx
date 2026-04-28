@@ -1,12 +1,14 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ImportJobProvider } from "@/contexts/ImportJobContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
+import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import AceitarConvite from "@/pages/AceitarConvite";
 import EsqueciSenha from "@/pages/EsqueciSenha";
@@ -42,17 +44,18 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <AuthProvider>
+        <ImportJobProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
             <Routes>
+              <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/aceitar-convite" element={<AceitarConvite />} />
               <Route path="/esqueci-senha" element={<EsqueciSenha />} />
               <Route path="/redefinir-senha" element={<RedefinirSenha />} />
-              <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                 <Route path="dashboard" element={<ProtectedRoute allowedRoles={["administrador", "gestor"]}><Dashboard /></ProtectedRoute>} />
                 <Route path="alertas" element={<ProtectedRoute allowedRoles={["administrador", "gestor"]}><Alertas /></ProtectedRoute>} />
                 <Route path="matriculas" element={<ProtectedRoute allowedRoles={["administrador", "gestor"]}><Matriculas /></ProtectedRoute>} />
@@ -81,6 +84,7 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
+        </ImportJobProvider>
       </AuthProvider>
     </ThemeProvider>
   </QueryClientProvider>

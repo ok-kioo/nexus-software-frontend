@@ -54,13 +54,27 @@ export default function Frequencia() {
 
   // inicializa chamada com presença marcada se já houver registro do dia
   useEffect(() => {
+  if (!matriculas.length) return;
+
+  setAttendance((prev) => {
+    // evita resetar se já existe estado carregado
+    if (Object.keys(prev).length > 0) return prev;
+
     const initial: Record<string, boolean> = {};
+
     matriculas.forEach((m: any) => {
-      const today_rec = historico.find((h: any) => h.matricula_id === m.id && h.data === today);
-      initial[m.id] = today_rec?.presente ?? true;
+      const todayRec = historico.find(
+        (h: any) =>
+          h.matricula_id === m.id &&
+          h.data === today
+      );
+
+      initial[m.id] = todayRec?.presente ?? true;
     });
-    setAttendance(initial);
-  }, [matriculas, historico, today]);
+
+    return initial;
+  });
+}, [matriculas, historico, today]);
 
   // estatísticas por aluno
   const stats = useMemo(() => {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Pencil, Trash2, Building2, BookOpen, Users, Loader2, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Building2, BookOpen, Users, Loader2, Upload, GraduationCap } from "lucide-react";
 import { PageHeader } from "@/components/reusable/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,11 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Aluno, Curso, Unidade,
-  useAlunosPaged, useCursosPaged, useUnidadesPaged, DEFAULT_PAGE_SIZE,
-  useDeleteAluno, useDeleteCurso, useDeleteUnidade,
+  useAlunosPaged, useCursosPaged, useUnidadesPaged, useTurmasPagedJoin, DEFAULT_PAGE_SIZE,
+  useDeleteAluno, useDeleteCurso, useDeleteUnidade, useDeleteTurma,
 } from "@/hooks/useEntities";
 import { UnidadeForm } from "@/components/crud/UnidadeForm";
 import { CursoForm } from "@/components/crud/CursoForm";
+import { TurmaForm } from "@/components/crud/TurmaForm";
 import { AlunoForm } from "@/components/crud/AlunoForm";
 import { ConfirmDelete } from "@/components/crud/ConfirmDelete";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,13 +47,15 @@ export default function Cadastros() {
     ? "Buscar por nome, cidade ou estado…"
     : tab === "cursos"
     ? "Buscar por nome ou categoria…"
+    : tab === "turmas"
+    ? "Buscar por nome da turma…"
     : "Buscar por nome, CPF ou e-mail…";
 
   return (
     <div>
       <PageHeader
         title="Cadastros"
-        subtitle="Gestão de unidades, cursos e alunos"
+        subtitle="Gestão de unidades, cursos, turmas e alunos"
         icon={<Building2 className="h-5 w-5" />}
       />
 
@@ -60,6 +63,7 @@ export default function Cadastros() {
         <TabsList>
           <TabsTrigger value="unidades" className="gap-1.5"><Building2 className="h-3.5 w-3.5" />Unidades</TabsTrigger>
           <TabsTrigger value="cursos" className="gap-1.5"><BookOpen className="h-3.5 w-3.5" />Cursos</TabsTrigger>
+          <TabsTrigger value="turmas" className="gap-1.5"><GraduationCap className="h-3.5 w-3.5" />Turmas</TabsTrigger>
           <TabsTrigger value="alunos" className="gap-1.5"><Users className="h-3.5 w-3.5" />Alunos</TabsTrigger>
         </TabsList>
 
@@ -74,6 +78,9 @@ export default function Cadastros() {
             </TabsContent>
             <TabsContent value="cursos" className="m-0">
               <CursosTab search={debouncedSearch} canManage={canManage} canDelete={canDelete} />
+            </TabsContent>
+            <TabsContent value="turmas" className="m-0">
+              <TurmasTab search={debouncedSearch} canManage={canManage} canDelete={canDelete} />
             </TabsContent>
             <TabsContent value="alunos" className="m-0">
               <AlunosTab search={debouncedSearch} canManage={canManage} canDelete={canDelete} />
@@ -388,6 +395,128 @@ function AlunosTab({ search, canManage, canDelete }: { search: string; canManage
         onOpenChange={(v) => !v && setConfirm(null)}
         title="Excluir aluno?"
         description={`Tem certeza que deseja excluir "${confirm?.nome_aluno}"? Matrículas vinculadas também serão removidas.`}
+        loading={del.isPending}
+        onConfirm={async () => { if (confirm) { await del.mutateAsync(confirm.id); setConfirm(null); } }}
+      />
+    </>
+  );
+}
+
+/* ────────────── Turmas ────────────── */
+type TurmaJoinRow = {
+  id: string;
+  nome_turma: string;
+  capacidade: number;
+  periodo: string | null;
+  turno: string | null;
+  status: string;
+  unidade_id: string;
+  curso_id: string;
+  unidade?: { id: string; nome_unidade: string; estado: string };
+  curso?: { id: string; nome_curso: string };
+};
+
+function TurmasTab({ search, canManage, canDelete }: { search: string; canManage: boolean; canDelete: boolean }) {
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [search]);
+  const { data, isLoading, isFetching, isError, error, refetch } = useTurmasPagedJoin({ page, search });
+  const rows = (data?.rows ?? []) as TurmaJoinRow[];
+  const total = data?.total ?? 0;
+  const del = useDeleteTurma();
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<TurmaJoinRow | null>(null);
+  const [confirm, setConfirm] = useState<TurmaJoinRow | null>(null);
+
+  return (
+    <>
+      <div className="flex justify-between items-center mb-3">
+        <p className="text-sm text-muted-foreground inline-flex items-center gap-2">
+          {total} turma(s){search && " (filtrado)"}
+          {isFetching && !isLoading && <Loader2 className="h-3 w-3 animate-spin" />}
+        </p>
+        {canManage && (
+          <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
+            <Plus className="h-4 w-4 mr-1" /> Nova Turma
+          </Button>
+        )}
+      </div>
+      {isLoading ? <TableSkeleton columns={7} rows={6} /> : isError ? (
+        <ErrorState error={error} onRetry={() => refetch()} />
+      ) : (
+        <>
+        {rows.length === 0 ? (
+          <EmptyState
+            icon={<GraduationCap className="h-7 w-7 text-muted-foreground" />}
+            title={search ? "Nenhum resultado para sua busca" : "Nenhuma turma cadastrada"}
+            description={search ? "Tente outros termos ou limpe a busca." : "Cadastre turmas para vincular alunos via matrícula."}
+            action={!search && canManage && (
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
+                  <Plus className="h-4 w-4 mr-1" /> Nova Turma
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/importar"><Upload className="h-4 w-4 mr-1" /> Importar Dados</Link>
+                </Button>
+              </div>
+            )}
+          />
+        ) : (
+          <>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Turma</TableHead><TableHead>Unidade</TableHead><TableHead>Curso</TableHead>
+              <TableHead>Turno</TableHead><TableHead>Período</TableHead><TableHead>Capacidade</TableHead>
+              <TableHead>Status</TableHead><TableHead className="w-[100px]"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((t) => (
+              <TableRow key={t.id} className="group hover:bg-muted/40 transition-colors">
+                <TableCell className="font-medium">{t.nome_turma}</TableCell>
+                <TableCell>{t.unidade?.nome_unidade ?? "—"}</TableCell>
+                <TableCell>{t.curso?.nome_curso ?? "—"}</TableCell>
+                <TableCell className="capitalize">{t.turno ?? "—"}</TableCell>
+                <TableCell>{t.periodo ?? "—"}</TableCell>
+                <TableCell>{t.capacidade}</TableCell>
+                <TableCell><StatusPill status={t.status} /></TableCell>
+                <TableCell className="text-right">
+                  <div className="inline-flex opacity-60 group-hover:opacity-100 transition-opacity">
+                    {canManage && (
+                      <Tooltip><TooltipTrigger asChild>
+                        <Button size="sm" variant="ghost" onClick={() => { setEditing(t); setOpen(true); }} aria-label={`Editar ${t.nome_turma}`}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger><TooltipContent>Editar</TooltipContent></Tooltip>
+                    )}
+                    {canDelete && (
+                      <Tooltip><TooltipTrigger asChild>
+                        <Button size="sm" variant="ghost" onClick={() => setConfirm(t)} className="text-destructive hover:text-destructive" aria-label={`Excluir ${t.nome_turma}`}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger><TooltipContent>Excluir</TooltipContent></Tooltip>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <PaginationBar page={page} pageSize={DEFAULT_PAGE_SIZE} total={total} onPageChange={setPage} loading={isFetching} />
+        </>
+        )}
+        </>
+      )}
+      <TurmaForm
+        open={open}
+        onOpenChange={setOpen}
+        turma={editing as any}
+      />
+      <ConfirmDelete
+        open={!!confirm}
+        onOpenChange={(v) => !v && setConfirm(null)}
+        title="Excluir turma?"
+        description={`Tem certeza que deseja excluir "${confirm?.nome_turma}"? Matrículas e vínculos de professores serão afetados.`}
         loading={del.isPending}
         onConfirm={async () => { if (confirm) { await del.mutateAsync(confirm.id); setConfirm(null); } }}
       />

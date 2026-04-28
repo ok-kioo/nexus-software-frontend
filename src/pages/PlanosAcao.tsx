@@ -79,7 +79,28 @@ export default function PlanosAcao() {
                 <div><Label>Título</Label><Input value={form.titulo} onChange={(e) => setForm({...form, titulo: e.target.value})} maxLength={150}/></div>
                 <div><Label>Descrição</Label><Textarea value={form.descricao} onChange={(e) => setForm({...form, descricao: e.target.value})} rows={3} maxLength={1000}/></div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div><Label>Prazo</Label><Input type="date" value={form.prazo} onChange={(e) => setForm({...form, prazo: e.target.value})}/></div>
+                  <div>
+                    <Label>Prazo</Label>
+                    <Input
+                      type="date"
+                      value={form.prazo}
+                      onChange={(e) =>
+                        setForm({ ...form, prazo: e.target.value })
+                      }
+                      onClick={(e) => {
+                        const input = e.currentTarget;
+                        if (input.showPicker) {
+                          input.showPicker();
+                        }
+                      }}
+                      onFocus={(e) => {
+                        const input = e.currentTarget;
+                        if (input.showPicker) {
+                          input.showPicker();
+                        }
+                      }}
+                    />
+                  </div>
                   <div>
                     <Label>Prioridade</Label>
                     <Select value={form.prioridade} onValueChange={(v) => setForm({...form, prioridade: v})}>

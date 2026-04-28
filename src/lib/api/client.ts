@@ -72,7 +72,10 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   const payload = text ? JSON.parse(text) : null;
 
   if (!response.ok) {
-    throw new ApiError(payload?.error ?? "Erro na API", response.status);
+    throw new ApiError(
+      payload?.error ?? payload?.message ?? "Erro na API",
+      response.status,
+    );
   }
 
   return payload as T;

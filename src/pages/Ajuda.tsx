@@ -235,7 +235,7 @@ const sections: GuideSection[] = [
   {
     id: "configuracoes",
     title: "Configurações",
-    description: "Preferências pessoais: tema, notificações e senha.",
+    description: "Preferências pessoais: tema e senha.",
     icon: Settings,
     route: "/configuracoes",
     audience: ["administrador", "gestor", "professor"],

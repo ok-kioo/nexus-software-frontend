@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { toast } from "sonner";
 import { fetchUsers } from "@/lib/api/users";
 import type { UserRole } from "@/data/mockData";
 import { TableSkeleton } from "@/components/reusable/TableSkeleton";
 import { EmptyState } from "@/components/reusable/EmptyState";
 import { ErrorState } from "@/components/reusable/ErrorState";
+import { UserEditDialog } from "@/components/UserEditDialog";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Row { id: string; name: string; email: string; role: UserRole | null; }
 
@@ -30,7 +31,10 @@ export default function Usuarios() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const navigate = useNavigate();
+  const { role: myRole, user: me } = useAuth();
 
   const load = async () => {
     setLoading(true);
@@ -46,6 +50,18 @@ export default function Usuarios() {
   };
 
   useEffect(() => { load(); }, []);
+
+  const canEdit = (target: Row) => {
+    if (!myRole) return false;
+    if (myRole === "administrador") return true;
+    if (myRole === "gestor") return target.role === "professor";
+    return false;
+  };
+
+  const openEdit = (id: string) => {
+    setEditingId(id);
+    setDialogOpen(true);
+  };
 
   return (
     <div>
@@ -82,23 +98,45 @@ export default function Usuarios() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((u) => (
-                  <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.name || "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{u.email}</TableCell>
-                    <TableCell>{roleBadge(u.role)}</TableCell>
-                    <TableCell className="text-right">
-                      <Button size="sm" variant="ghost" className="text-primary hover:bg-primary/10" onClick={() => toast.info(`Edição de ${u.name} em breve`)}>
-                        <Pencil className="h-3 w-3" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {rows.map((u) => {
+                  const editable = canEdit(u);
+                  return (
+                    <TableRow key={u.id}>
+                      <TableCell className="font-medium">
+                        {u.name || "—"}
+                        {me?.id === u.id && (
+                          <span className="ml-2 text-[10px] text-muted-foreground">(você)</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{u.email}</TableCell>
+                      <TableCell>{roleBadge(u.role)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-primary hover:bg-primary/10 disabled:opacity-40"
+                          onClick={() => openEdit(u.id)}
+                          disabled={!editable}
+                          aria-label={`Editar ${u.name}`}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
+
+      <UserEditDialog
+        userId={editingId}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSaved={load}
+      />
     </div>
   );
 }

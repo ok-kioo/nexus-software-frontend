@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Upload,
   FileSpreadsheet,
@@ -98,12 +98,10 @@ import {
   parseExcelFile,
   validateSheet,
 } from "@/lib/importacao/excel";
-import { persistImport } from "@/lib/importacao/persist";
 import { useQueryClient } from "@tanstack/react-query";
-import { startBackendImport } from "@/hooks/useImportJob";
+import { startBackendImport, fetchImportStatus } from "@/hooks/useImportJob";
 import { ImportJobProgress } from "@/components/reusable/ImportJobProgress";
-
-const STORAGE_KEY = "nexus-initial-import-done";
+import { useActiveImportJob } from "@/contexts/ImportJobContext";
 
 type Step = "upload" | "review" | "validation" | "done";
 
@@ -125,14 +123,16 @@ export default function Importar() {
     Record<number, SheetValidationResult>
   >({});
   const [importing, setImporting] = useState(false);
-  const [backendJobId, setBackendJobId] = useState<string | null>(null);
-  const [submittingBackend, setSubmittingBackend] = useState(false);
+  const [sourceFile, setSourceFile] = useState<File | null>(null);
+  const [isInitialImport, setIsInitialImport] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
+  const { activeJobId, setActiveJobId } = useActiveImportJob();
 
-  const isInitialImport =
-    typeof window !== "undefined" &&
-    localStorage.getItem(STORAGE_KEY) !== "true";
+  // Pergunta ao backend (1 chamada) se a base ainda exige carga inicial completa.
+  useEffect(() => {
+    fetchImportStatus().then((s) => setIsInitialImport(s.initialImportRequired));
+  }, []);
 
   // ── Upload ─────────────────────────────────────────────
   const handleFile = async (file: File) => {
@@ -161,6 +161,7 @@ export default function Importar() {
       }));
       setWorkbook(wb);
       setSheets(initial);
+      setSourceFile(file);
       setActiveSheet(0);
       setStep("review");
       toast.success(
@@ -280,55 +281,50 @@ export default function Importar() {
     0,
   );
 
+  /**
+   * Envia o arquivo original para o backend que dispara um job assíncrono.
+   * O modo (single ≤10MB / batched >10MB) é decidido automaticamente pelo backend.
+   * O frontend NÃO marca como concluído aqui — a transição para "done" só
+   * acontece quando o ImportJobProgress reporta status = completed.
+   */
   const handleImport = async () => {
+    if (!sourceFile) {
+      toast.error("Arquivo de origem não disponível. Reinicie o fluxo.");
+      return;
+    }
+    // Coleta entidades efetivamente selecionadas (incluídas + com entidade definida).
+    const selectedEntities = sheets
+      .filter((s) => s.include && s.assignedEntity)
+      .map((s) => s.assignedEntity as EntityKey);
+    const uniqueEntities = Array.from(new Set(selectedEntities));
+    if (uniqueEntities.length === 0) {
+      toast.error("Selecione ao menos uma aba para importar.");
+      return;
+    }
     setImporting(true);
-    setProgress(10);
-    const tick = setInterval(
-      () => setProgress((p) => Math.min(p + 8, 90)),
-      300,
-    );
     try {
-      const selected = sheets
-        .filter((s) => s.include && s.assignedEntity)
-        .map((s) => ({
-          sheet: s,
-          entity: s.assignedEntity!,
-          mappings: s.mappings,
-        }));
-      const results = await persistImport(selected);
-      clearInterval(tick);
-      setProgress(100);
-      const totalInserted = results.reduce((a, r) => a + r.inserted, 0);
-      const totalErrs = results.reduce((a, r) => a + r.errors.length, 0);
-      if (isInitialImport) {
-        try {
-          localStorage.setItem(STORAGE_KEY, "true");
-        } catch {
-          /* ignora storage indisponível */
-        }
-      }
-      // invalida caches para refletir nas telas
-      await qc.invalidateQueries();
-      setStep("done");
-      if (totalErrs > 0) {
-        toast.warning(
-          `Importado com avisos: ${totalInserted} registros, ${totalErrs} linha(s) ignoradas.`,
-        );
-        results.forEach((r) => {
-          if (r.errors.length > 0) {
-            console.warn(`[importação ${r.entity}]`, r.errors.slice(0, 5));
-          }
-        });
-      } else {
-        toast.success(`Importação concluída: ${totalInserted} registros gravados.`);
-      }
+      const { job_id } = await startBackendImport(sourceFile, {
+        entities: uniqueEntities,
+      });
+      setActiveJobId(job_id);
+      toast.success(
+        `Importação iniciada para ${uniqueEntities.length} entidade(s). Acompanhe o progresso abaixo.`,
+      );
     } catch (e) {
-      clearInterval(tick);
-      console.error("[persistImport]", e);
-      toast.error("Falha ao gravar dados no banco. Verifique o console.");
+      console.error("[startBackendImport]", e);
+      toast.error((e as Error).message ?? "Falha ao iniciar importação.");
     } finally {
       setImporting(false);
     }
+  };
+
+  /** Chamado pelo ImportJobProgress quando o job termina com sucesso. */
+  const handleJobCompleted = () => {
+    // O backend é a fonte de verdade da "primeira importação concluída".
+    // Refazemos a verificação de status para refletir o novo estado da base.
+    fetchImportStatus().then((s) => setIsInitialImport(s.initialImportRequired));
+    void qc.invalidateQueries();
+    setStep("done");
   };
 
   const handleReset = () => {
@@ -338,6 +334,8 @@ export default function Importar() {
     setValidations({});
     setActiveSheet(0);
     setProgress(0);
+    setSourceFile(null);
+    setActiveJobId(null);
   };
 
   // ── Render ─────────────────────────────────────────────
@@ -391,12 +389,12 @@ export default function Importar() {
         )}
       </div>
 
-      {/* Progresso da importação assíncrona em servidor */}
-      {backendJobId && (
+      {/* Progresso da importação assíncrona — persistente entre navegações via provider */}
+      {activeJobId && (
         <div className="mb-6">
           <ImportJobProgress
-            jobId={backendJobId}
-            onFinished={() => qc.invalidateQueries()}
+            jobId={activeJobId}
+            onFinished={handleJobCompleted}
           />
         </div>
       )}
@@ -452,47 +450,6 @@ export default function Importar() {
               e.target.value = "";
             }}
           />
-          {/* Atalho: enviar direto para o backend (assíncrono, paralelizado) */}
-          <div className="mb-4 rounded-lg border border-border bg-muted/30 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-            <div className="text-sm text-muted-foreground">
-              <strong className="text-foreground">Importar no servidor</strong>{" "}
-              — recomendado para arquivos grandes. O processamento roda em
-              segundo plano e você pode continuar usando o sistema.
-            </div>
-            <div>
-              <input
-                id="backend-file"
-                type="file"
-                accept=".xlsx"
-                className="hidden"
-                onChange={async (e) => {
-                  const f = e.target.files?.[0];
-                  e.target.value = "";
-                  if (!f) return;
-                  setSubmittingBackend(true);
-                  try {
-                    const { job_id } = await startBackendImport(f);
-                    setBackendJobId(job_id);
-                    toast.success("Arquivo enviado. Processando em segundo plano.");
-                  } catch (err) {
-                    toast.error((err as Error).message);
-                  } finally {
-                    setSubmittingBackend(false);
-                  }
-                }}
-              />
-              <Button
-                variant="default"
-                disabled={submittingBackend}
-                onClick={() =>
-                  document.getElementById("backend-file")?.click()
-                }
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                {submittingBackend ? "Enviando…" : "Enviar para servidor (assíncrono)"}
-              </Button>
-            </div>
-          </div>
           <div
             onDragOver={(e) => {
               e.preventDefault();
