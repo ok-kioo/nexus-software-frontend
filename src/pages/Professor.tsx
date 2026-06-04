@@ -8,6 +8,7 @@ import { ClipboardCheck, BookOpen, Users, GraduationCap } from "lucide-react";
 import { useTurmasDoProfessor } from "@/hooks/useAnalytics";
 import { useQuery } from "@tanstack/react-query";
 import { analyticsApi } from "@/lib/api/analytics";
+import { OnboardingChecklist } from "@/components/onboarding/OnboardingChecklist";
 
 export default function Professor() {
   const { user } = useAuth();
@@ -42,6 +43,10 @@ export default function Professor() {
         subtitle={`Olá, ${user?.name || "Professor"}. Gerencie frequência e notas das suas turmas.`}
       />
 
+      <OnboardingChecklist />
+
+
+
       {turmas.length === 0 ? (
         <Card className="text-center">
           <CardContent className="p-12">
@@ -51,7 +56,7 @@ export default function Professor() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div data-tour="professor-turmas" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {turmas.map((t: any) => (
             <Card key={t.id}>
               <CardHeader>

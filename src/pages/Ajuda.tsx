@@ -13,6 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { Button } from "@/components/ui/button";
+import { RotateCcw, Sparkles } from "lucide-react";
 import type { UserRole } from "@/data/mockData";
 
 type Audience = UserRole | "todos";
@@ -272,7 +275,15 @@ const faqs = [
 
 export default function Ajuda() {
   const { role } = useAuth();
+  const { reset, reopenChecklist, startTour, steps: onboardingSteps } = useOnboarding();
   const [query, setQuery] = useState("");
+
+  const handleReplayOnboarding = async () => {
+    await reset();
+    await reopenChecklist();
+    startTour(true);
+  };
+
 
   const visibleSections = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -400,6 +411,37 @@ export default function Ajuda() {
         </TabsContent>
 
         <TabsContent value="primeiros-passos" className="mt-6">
+          {onboardingSteps.length > 0 && (
+            <Card className="mb-6 border-primary/30">
+              <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                      <Sparkles className="h-5 w-5" />
+                    </div>
+                    <CardTitle className="text-base">Tour guiado do Nexus</CardTitle>
+                  </div>
+                  <CardDescription className="mt-1">
+                    Reabra o checklist e o modal de boas-vindas para refazer o tour conforme o seu papel.
+                  </CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleReplayOnboarding}>
+                  <RotateCcw className="h-4 w-4 mr-1.5" />
+                  Refazer onboarding
+                </Button>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                <ol className="list-decimal pl-5 space-y-1">
+                  {onboardingSteps.map((s) => (
+                    <li key={s.id}>
+                      <span className="text-foreground">{s.title}</span> — {s.description}
+                    </li>
+                  ))}
+                </ol>
+              </CardContent>
+            </Card>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Card>
               <CardHeader>

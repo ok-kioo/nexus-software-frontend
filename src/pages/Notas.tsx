@@ -158,7 +158,7 @@ export default function Notas() {
         </Button>
       </div>
 
-      <Card>
+      <Card data-tour="notas-tabela">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div>

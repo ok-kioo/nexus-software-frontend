@@ -14,6 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      alerta_historico: {
+        Row: {
+          actor_id: string | null
+          alerta_id: string
+          created_at: string
+          evento: string
+          id: string
+          payload: Json
+        }
+        Insert: {
+          actor_id?: string | null
+          alerta_id: string
+          created_at?: string
+          evento: string
+          id?: string
+          payload?: Json
+        }
+        Update: {
+          actor_id?: string | null
+          alerta_id?: string
+          created_at?: string
+          evento?: string
+          id?: string
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerta_historico_alerta_id_fkey"
+            columns: ["alerta_id"]
+            isOneToOne: false
+            referencedRelation: "alertas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      alertas: {
+        Row: {
+          created_at: string
+          descricao: string
+          entidade: string
+          entidade_id: string | null
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          metricas: Json
+          plano_id: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string
+          tipo: string
+          titulo: string
+          unidade: string | null
+          unidade_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          entidade: string
+          entidade_id?: string | null
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          metricas?: Json
+          plano_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          status?: string
+          tipo: string
+          titulo: string
+          unidade?: string | null
+          unidade_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          entidade?: string
+          entidade_id?: string | null
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          metricas?: Json
+          plano_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          tipo?: string
+          titulo?: string
+          unidade?: string | null
+          unidade_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       alunos: {
         Row: {
           created_at: string
@@ -303,6 +401,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      import_jobs: {
+        Row: {
+          created_at: string
+          current_step: string | null
+          error_message: string | null
+          file_name: string
+          file_size_bytes: number
+          finished_at: string | null
+          id: string
+          inserted_count: number
+          processed_chunks: number
+          processed_rows: number
+          progress_pct: number
+          result_summary: Json | null
+          selected_entities: string[] | null
+          skipped_count: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["import_job_status"]
+          storage_path: string
+          total_chunks: number | null
+          total_rows: number | null
+          updated_at: string
+          user_id: string
+          validation_errors: Json | null
+        }
+        Insert: {
+          created_at?: string
+          current_step?: string | null
+          error_message?: string | null
+          file_name: string
+          file_size_bytes: number
+          finished_at?: string | null
+          id?: string
+          inserted_count?: number
+          processed_chunks?: number
+          processed_rows?: number
+          progress_pct?: number
+          result_summary?: Json | null
+          selected_entities?: string[] | null
+          skipped_count?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["import_job_status"]
+          storage_path: string
+          total_chunks?: number | null
+          total_rows?: number | null
+          updated_at?: string
+          user_id: string
+          validation_errors?: Json | null
+        }
+        Update: {
+          created_at?: string
+          current_step?: string | null
+          error_message?: string | null
+          file_name?: string
+          file_size_bytes?: number
+          finished_at?: string | null
+          id?: string
+          inserted_count?: number
+          processed_chunks?: number
+          processed_rows?: number
+          progress_pct?: number
+          result_summary?: Json | null
+          selected_entities?: string[] | null
+          skipped_count?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["import_job_status"]
+          storage_path?: string
+          total_chunks?: number | null
+          total_rows?: number | null
+          updated_at?: string
+          user_id?: string
+          validation_errors?: Json | null
+        }
+        Relationships: []
       }
       invites: {
         Row: {
@@ -697,13 +870,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_initial_import_required: { Args: never; Returns: boolean }
       is_professor_of_turma: {
         Args: { _turma_id: string; _user_id: string }
         Returns: boolean
       }
+      promote_to_admin: { Args: { _email: string }; Returns: Json }
     }
     Enums: {
       app_role: "administrador" | "gestor" | "professor"
+      import_job_status:
+        | "queued"
+        | "parsing"
+        | "validating"
+        | "persisting"
+        | "completed"
+        | "failed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -832,6 +1015,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["administrador", "gestor", "professor"],
+      import_job_status: [
+        "queued",
+        "parsing",
+        "validating",
+        "persisting",
+        "completed",
+        "failed",
+        "cancelled",
+      ],
     },
   },
 } as const

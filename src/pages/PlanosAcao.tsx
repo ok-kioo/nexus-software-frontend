@@ -16,6 +16,8 @@ import { TableSkeleton } from "@/components/reusable/TableSkeleton";
 import { EmptyState } from "@/components/reusable/EmptyState";
 import { useAlunos } from "@/hooks/useEntities";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { isFutureOrToday, todayIso } from "@/lib/dates";
 
 const statusCfg: Record<string, { label: string; color: string; icon: any }> = {
   aberto: { label: "Aberto", color: "bg-secondary/15 text-secondary", icon: AlertCircle },
@@ -84,6 +86,7 @@ export default function PlanosAcao() {
                     <Input
                       type="date"
                       value={form.prazo}
+                      min={todayIso()}
                       onChange={(e) =>
                         setForm({ ...form, prazo: e.target.value })
                       }
@@ -117,7 +120,10 @@ export default function PlanosAcao() {
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
                 <Button onClick={async () => {
-                  if (!form.aluno_id || !form.titulo.trim()) return;
+                  if (!form.aluno_id) { toast.error("Selecione o aluno do plano."); return; }
+                  if (!form.titulo.trim()) { toast.error("Informe o título do plano."); return; }
+                  if (!form.descricao.trim()) { toast.error("Informe a descrição do plano."); return; }
+                  if (form.prazo && !isFutureOrToday(form.prazo)) { toast.error("O prazo não pode estar no passado."); return; }
                   await create.mutateAsync({ ...form, prazo: form.prazo || null });
                   setForm({ aluno_id: "", titulo: "", descricao: "", prazo: "", prioridade: "media" });
                   setOpen(false);

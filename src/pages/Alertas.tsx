@@ -15,6 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAlertas, useAlertaDetalhe, useUpdateAlertaStatus, usePromoteAlerta } from "@/hooks/useAlertas";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatRelative } from "@/lib/utils";
+import { isFutureOrToday, todayIso } from "@/lib/dates";
+import { toast } from "sonner";
 import type { Alerta, AlertaStatus } from "@/lib/api/alertas";
 
 const severityConfig = {
@@ -343,7 +345,7 @@ function PromoteDialog({
           <div><Label>Título</Label><Input value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} maxLength={150} /></div>
           <div><Label>Descrição</Label><Textarea value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} rows={3} maxLength={2000} /></div>
           <div className="grid grid-cols-2 gap-2">
-            <div><Label>Prazo</Label><Input type="date" value={form.prazo} onChange={(e) => setForm({ ...form, prazo: e.target.value })} /></div>
+            <div><Label>Prazo</Label><Input type="date" min={todayIso()} value={form.prazo} onChange={(e) => setForm({ ...form, prazo: e.target.value })} /></div>
             <div>
               <Label>Prioridade</Label>
               <Select value={form.prioridade} onValueChange={(v) => setForm({ ...form, prioridade: v as "baixa" | "media" | "alta" })}>
@@ -361,12 +363,17 @@ function PromoteDialog({
           <Button variant="outline" onClick={onClose} disabled={submitting}>Cancelar</Button>
           <Button
             disabled={submitting || !form.titulo.trim()}
-            onClick={() => onSubmit({
-              titulo: form.titulo.trim(),
-              descricao: form.descricao.trim(),
-              prazo: form.prazo || null,
-              prioridade: form.prioridade,
-            })}
+            onClick={() => {
+              if (!form.titulo.trim()) { toast.error("Informe o título do plano."); return; }
+              if (!form.descricao.trim()) { toast.error("Informe a descrição do plano."); return; }
+              if (form.prazo && !isFutureOrToday(form.prazo)) { toast.error("O prazo não pode estar no passado."); return; }
+              onSubmit({
+                titulo: form.titulo.trim(),
+                descricao: form.descricao.trim(),
+                prazo: form.prazo || null,
+                prioridade: form.prioridade,
+              });
+            }}
           >
             Criar plano
           </Button>

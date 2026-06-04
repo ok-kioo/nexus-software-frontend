@@ -228,7 +228,7 @@ export default function Convites() {
         title="Convites"
         subtitle="Convide novos usuários por e-mail"
         action={
-          <Button onClick={() => { setForm({ email: "", role: allowedRoles[0], turma_ids: [] }); setOpen(true); }}>
+          <Button data-tour="convites-novo" onClick={() => { setForm({ email: "", role: allowedRoles[0], turma_ids: [] }); setOpen(true); }}>
             <Plus className="h-4 w-4 mr-1" /> Novo convite
           </Button>
         }

@@ -15,6 +15,7 @@ import { useEventos, useCreateEvento, useDeleteEvento } from "@/hooks/useNovasFe
 import { useUnidades } from "@/hooks/useEntities";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const tipoLabel: Record<string, string> = {
   evento: "Evento", prova: "Prova", feriado: "Feriado", reuniao: "Reunião",
@@ -80,7 +81,13 @@ export default function Calendario() {
                 </div>
                 <div>
                   <Label>Data</Label>
-                  <Calendar mode="single" selected={dataInicio} onSelect={setDataInicio} className={cn("p-3 pointer-events-auto rounded-md border")}/>
+                  <Calendar
+                    mode="single"
+                    selected={dataInicio}
+                    onSelect={setDataInicio}
+                    disabled={{ before: new Date(new Date().setHours(0, 0, 0, 0)) }}
+                    className={cn("p-3 pointer-events-auto rounded-md border")}
+                  />
                 </div>
                 <div>
                   <Label>Unidade (opcional)</Label>
@@ -97,10 +104,16 @@ export default function Calendario() {
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
                 <Button onClick={async () => {
-                  if (!titulo.trim() || !dataInicio) return;
+                  if (!titulo.trim()) { toast.error("Informe o título do evento."); return; }
+                  if (!dataInicio) { toast.error("Selecione a data do evento."); return; }
+                  const isoData = dataInicio.toISOString().slice(0, 10);
+                  if (isoData < new Date().toISOString().slice(0, 10)) {
+                    toast.error("A data do evento não pode estar no passado.");
+                    return;
+                  }
                   await create.mutateAsync({
                     titulo, descricao, tipo,
-                    data_inicio: dataInicio.toISOString().slice(0,10),
+                    data_inicio: isoData,
                     unidade_id: unidadeId && unidadeId !== "all" ? unidadeId : null,
                   });
                   setTitulo(""); setDescricao(""); setTipo("evento"); setUnidadeId(""); setOpen(false);

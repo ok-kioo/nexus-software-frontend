@@ -369,6 +369,7 @@ export default function Importar() {
       <div className="flex flex-wrap gap-3 mb-6">
         <Button
           variant="outline"
+          data-tour="import-download-template"
           onClick={async () => {
             try {
               await downloadOfficialTemplate();
@@ -451,6 +452,7 @@ export default function Importar() {
             }}
           />
           <div
+            data-tour="import-upload-area"
             onDragOver={(e) => {
               e.preventDefault();
               setDragging(true);

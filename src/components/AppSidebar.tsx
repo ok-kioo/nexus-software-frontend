@@ -207,8 +207,9 @@ export function AppSidebar() {
               <SidebarMenu>
                 {group.items.map((item) => {
                   const active = location.pathname === item.url;
+                  const tourKey = item.url.replace(/^\//, "");
                   return (
-                    <SidebarMenuItem key={item.url}>
+                    <SidebarMenuItem key={item.url} data-tour={`sidebar-${tourKey}`}>
                       <SidebarMenuButton asChild isActive={active}>
                         <NavLink
                           to={item.url}

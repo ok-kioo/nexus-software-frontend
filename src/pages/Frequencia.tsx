@@ -187,7 +187,7 @@ export default function Frequencia() {
             </Button>
           </div>
 
-          <Card>
+          <Card data-tour="frequencia-lista">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div>

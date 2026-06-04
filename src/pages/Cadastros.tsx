@@ -60,7 +60,7 @@ export default function Cadastros() {
       />
 
       <Tabs value={tab} onValueChange={(v) => { setTab(v); setSearch(""); }}>
-        <TabsList>
+        <TabsList data-tour="cadastros-tabs">
           <TabsTrigger value="unidades" className="gap-1.5"><Building2 className="h-3.5 w-3.5" />Unidades</TabsTrigger>
           <TabsTrigger value="cursos" className="gap-1.5"><BookOpen className="h-3.5 w-3.5" />Cursos</TabsTrigger>
           <TabsTrigger value="turmas" className="gap-1.5"><GraduationCap className="h-3.5 w-3.5" />Turmas</TabsTrigger>

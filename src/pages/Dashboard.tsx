@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/reusable/EmptyState";
 import { useAuth } from "@/contexts/AuthContext";
+import { OnboardingChecklist } from "@/components/onboarding/OnboardingChecklist";
 
 const kpiIcons = [
   <Users className="h-4 w-4" />,
@@ -85,6 +86,7 @@ export default function Dashboard() {
   return (
     <div>
       <PageHeader title="Painéis Gerenciais" subtitle="Visão geral da rede de ensino" />
+      <OnboardingChecklist />
       <FilterBar
         config={{ unit: true, period: true }}
         values={filters}
@@ -100,7 +102,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div data-tour="dashboard-kpis" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {kpis.map((kpi, i) => (
           <KPICard key={kpi.label} icon={kpiIcons[i]} label={kpi.label} value={kpi.value} />
         ))}

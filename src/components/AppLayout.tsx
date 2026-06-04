@@ -2,6 +2,8 @@ import { Outlet, useLocation } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppBreadcrumb } from "@/components/AppBreadcrumb";
+import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function AppLayout() {
   const location = useLocation();
@@ -27,10 +29,13 @@ export default function AppLayout() {
             </kbd>
           </header>
           <main className="flex-1 overflow-auto p-6">
-            <div key={location.pathname} className="animate-fade-in-up">
-              <Outlet />
-            </div>
+            <ErrorBoundary>
+              <div key={location.pathname} className="animate-fade-in-up">
+                <Outlet />
+              </div>
+            </ErrorBoundary>
           </main>
+          <OnboardingProvider />
         </div>
       </div>
     </SidebarProvider>

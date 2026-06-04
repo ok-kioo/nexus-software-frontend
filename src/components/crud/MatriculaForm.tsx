@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Matricula, useAlunos, useCreateMatricula, useTurmas, useUpdateMatricula } from "@/hooks/useEntities";
 import { Combobox } from "@/components/reusable/Combobox";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { isValidIsoDate } from "@/lib/dates";
 
 interface Props {
   open: boolean;
@@ -40,7 +42,15 @@ export function MatriculaForm({ open, onOpenChange, matricula }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.aluno_id || !form.turma_id) return;
+    if (!form.aluno_id) { toast.error("Selecione o aluno."); return; }
+    if (!form.turma_id) { toast.error("Selecione a turma."); return; }
+    if (!form.numero_matricula.trim()) { toast.error("Informe o número da matrícula."); return; }
+    if (form.data_inicio && !isValidIsoDate(form.data_inicio)) { toast.error("Data de início inválida."); return; }
+    if (form.data_fim && !isValidIsoDate(form.data_fim)) { toast.error("Data de encerramento inválida."); return; }
+    if (form.data_inicio && form.data_fim && form.data_fim < form.data_inicio) {
+      toast.error("A data de encerramento deve ser igual ou posterior à de início.");
+      return;
+    }
     const payload = {
       ...form,
       data_inicio: form.data_inicio || null,
@@ -92,7 +102,7 @@ export function MatriculaForm({ open, onOpenChange, matricula }: Props) {
             </div>
             <div>
               <Label htmlFor="fim">Data de Encerramento</Label>
-              <Input id="fim" type="date" value={form.data_fim} onChange={(e) => setForm({ ...form, data_fim: e.target.value })} />
+              <Input id="fim" type="date" min={form.data_inicio || undefined} value={form.data_fim} onChange={(e) => setForm({ ...form, data_fim: e.target.value })} />
             </div>
           </div>
           <div>

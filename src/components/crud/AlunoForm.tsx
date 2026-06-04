@@ -15,6 +15,7 @@ import {
 } from "@/hooks/useEntities";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { isPastOrToday, todayIso } from "@/lib/dates";
 
 interface Props {
   open: boolean;
@@ -22,7 +23,7 @@ interface Props {
   aluno?: Aluno | null;
 }
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
+
 
 export function AlunoForm({ open, onOpenChange, aluno }: Props) {
   const [form, setForm] = useState({ nome_aluno: "", documento: "", email: "", telefone: "", data_nascimento: "", status: "ativo" });
@@ -55,6 +56,12 @@ export function AlunoForm({ open, onOpenChange, aluno }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.nome_aluno.trim()) { toast.error("Informe o nome do aluno."); return; }
+    if (!form.documento.trim()) { toast.error("Informe o documento do aluno."); return; }
+    if (form.data_nascimento && !isPastOrToday(form.data_nascimento)) {
+      toast.error("A data de nascimento não pode estar no futuro.");
+      return;
+    }
     const payload = {
       ...form,
       email: form.email || null,
@@ -131,7 +138,7 @@ export function AlunoForm({ open, onOpenChange, aluno }: Props) {
             </div>
             <div>
               <Label htmlFor="dn">Data de Nascimento</Label>
-              <Input id="dn" type="date" value={form.data_nascimento} onChange={(e) => setForm({ ...form, data_nascimento: e.target.value })} />
+              <Input id="dn" type="date" max={todayIso()} value={form.data_nascimento} onChange={(e) => setForm({ ...form, data_nascimento: e.target.value })} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
