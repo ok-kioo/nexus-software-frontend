@@ -1,3 +1,4 @@
+import { NexusLogoMark } from "@/components/NexusLogoMark";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,9 +57,8 @@ export default function Login() {
           <CardContent className="p-6 sm:p-8">
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center mb-3">
-                <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl">
-                  N
-                </div>
+                <NexusLogoMark className="w-12 h-12 rounded-xl" />
+
               </div>
               <h1 className="text-3xl font-bold">
                 <span className="text-primary">Nex</span>

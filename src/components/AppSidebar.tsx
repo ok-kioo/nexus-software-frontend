@@ -1,3 +1,4 @@
+import { NexusLogoMark } from "@/components/NexusLogoMark";
 import {
   LayoutDashboard, Bell, Users, BookOpen, GraduationCap, ShieldAlert,
   Upload, Download, Settings, LogOut, ClipboardList, UserCog, CalendarCheck, Mail, Database,
@@ -157,9 +158,8 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className={`py-5 ${collapsed ? 'px-0 flex justify-center' : 'px-4'}`}>
         <div className={`flex items-center gap-2 ${collapsed ? 'justify-center' : ''}`}>
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
-            N
-          </div>
+          <NexusLogoMark className="w-8 h-8" />
+
           {!collapsed && (
             <div>
               <div className="font-bold text-sm text-foreground">

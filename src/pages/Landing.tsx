@@ -1,3 +1,4 @@
+import { NexusLogoMark } from "@/components/NexusLogoMark";
 import { useEffect, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -124,9 +125,8 @@ export default function Landing() {
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/70 backdrop-blur-lg">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <a href="#top" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-              N
-            </div>
+            <NexusLogoMark className="h-9 w-9" />
+
             <span className="text-xl font-bold tracking-tight">
               <span className="text-primary">Nex</span>
               <span className="text-accent">us</span>
@@ -461,9 +461,8 @@ export default function Landing() {
           <div className="grid gap-10 md:grid-cols-3">
             <div>
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-                  N
-                </div>
+                <NexusLogoMark className="h-9 w-9" />
+
                 <span className="text-xl font-bold tracking-tight">
                   <span className="text-primary">Nex</span>
                   <span className="text-accent">us</span>
