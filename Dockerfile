@@ -1,18 +1,14 @@
 # syntax=docker/dockerfile:1.7
 
 # ---------- builder ----------
-FROM oven/bun:1.1.38-alpine AS builder
+FROM oven/bun:1.2-alpine AS builder
 WORKDIR /app
 
 # Args injetados em build-time (Vite só lê variáveis com prefixo VITE_).
 ARG VITE_API_URL=http://localhost:3000
-ARG VITE_SUPABASE_URL
-ARG VITE_SUPABASE_PUBLISHABLE_KEY
-ARG VITE_SUPABASE_PROJECT_ID
-ENV VITE_API_URL=$VITE_API_URL \
-    VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
-    VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY \
-    VITE_SUPABASE_PROJECT_ID=$VITE_SUPABASE_PROJECT_ID
+ARG VITE_SUPABASE_URL=https://iqrbavaodcmxtkkefwez.supabase.co
+ARG VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_TIhPM0HHrL_dKb6y2vxeIg_FEgY_1m-
+ARG VITE_SUPABASE_PROJECT_ID=iqrbavaodcmxtkkefwez
 
 COPY package.json ./
 RUN bun install --no-save

@@ -170,7 +170,7 @@ export default function Matriculas() {
 
       <Card>
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 items-end">
             <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nº matrícula, aluno ou CPF…" className="lg:col-span-2" />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="bg-card"><SelectValue placeholder="Status" /></SelectTrigger>
