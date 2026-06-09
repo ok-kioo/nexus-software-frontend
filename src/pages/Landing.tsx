@@ -28,6 +28,10 @@ import {
   Mail,
   TrendingUp,
   Activity,
+  Brain,
+  Target,
+  Clock,
+  Lightbulb,
 } from "lucide-react";
 
 const features = [
@@ -375,6 +379,160 @@ export default function Landing() {
                 </li>
               ))}
             </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* CAPELO + IA */}
+      <section
+        id="capelo"
+        className="relative overflow-hidden border-t border-border py-20 md:py-28"
+      >
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute top-0 right-0 h-[40%] w-[40%] rounded-full bg-accent/10 blur-3xl" />
+          <div className="absolute bottom-0 left-0 h-[40%] w-[40%] rounded-full bg-primary/10 blur-3xl" />
+        </div>
+
+        <div className="container mx-auto px-4">
+          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+            {/* Left: pitch */}
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-medium text-accent backdrop-blur">
+                <Sparkles className="h-3.5 w-3.5" />
+                Novo · Powered by IA
+              </div>
+
+              <h2 className="mt-6 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+                Conheça o <span className="text-primary">Capelo</span>,
+                <br className="hidden sm:block" /> seu copiloto de{" "}
+                <span className="text-accent">planos de ação</span>.
+              </h2>
+
+              <p className="mt-5 max-w-xl text-lg text-muted-foreground">
+                Um assistente integrado à plataforma que ajuda gestores e professores a
+                transformar diagnósticos em decisões. Pergunte, descreva o cenário e o
+                Capelo elabora um plano sob medida.
+              </p>
+
+              <ul className="mt-8 space-y-3">
+                {[
+                  {
+                    icon: Target,
+                    title: "Sugere ações concretas",
+                    desc: "Recomenda intervenções pedagógicas alinhadas à sua realidade.",
+                  },
+                  {
+                    icon: Clock,
+                    title: "Define prazos realistas",
+                    desc: "Estrutura cronogramas e marcos de acompanhamento.",
+                  },
+                  {
+                    icon: Lightbulb,
+                    title: "Propõe estratégias adaptadas",
+                    desc: "Considera contexto da turma, unidade e indicadores acadêmicos.",
+                  },
+                ].map((it) => (
+                  <li key={it.title} className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <it.icon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">{it.title}</p>
+                      <p className="text-sm text-muted-foreground">{it.desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <Button asChild size="lg" className="h-12 px-6">
+                  <Link to="/login" aria-label="Conhecer o Capelo - entrar na plataforma">
+                    Conhecer o Capelo <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Brain className="h-4 w-4 text-accent" />
+                  Disponível após login, em todas as telas.
+                </div>
+              </div>
+            </div>
+
+            {/* Right: chat mockup */}
+            <div className="relative">
+              <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-primary/20 via-transparent to-accent/20 blur-2xl" />
+              <Card className="relative shadow-xl overflow-hidden">
+                <div className="flex items-center gap-3 border-b border-border bg-gradient-to-r from-primary/10 to-accent/10 px-4 py-3">
+                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
+                    <NexusLogoMark className="w-5 h-5" imgClassName="brightness-0 invert" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm leading-tight">Capelo</div>
+                    <div className="text-[11px] text-muted-foreground leading-tight">
+                      Assistente de planos de ação
+                    </div>
+                  </div>
+                  <div className="ml-auto flex items-center gap-1.5 text-[11px] text-accent">
+                    <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+                    online
+                  </div>
+                </div>
+
+                <CardContent className="p-4 space-y-3 bg-background/40">
+                  {/* User msg */}
+                  <div className="flex justify-end">
+                    <div className="max-w-[85%] text-sm rounded-2xl rounded-br-sm px-3.5 py-2 bg-primary text-primary-foreground">
+                      Frequência do 7º ano C caiu 12% no último mês. Como agir?
+                    </div>
+                  </div>
+                  {/* Assistant msg */}
+                  <div className="flex justify-start">
+                    <div className="max-w-[90%] text-sm text-foreground space-y-2">
+                      <p>Vamos estruturar um plano em 3 frentes:</p>
+                      <ul className="space-y-1 text-sm">
+                        <li className="flex gap-2">
+                          <span className="text-primary">1.</span>
+                          <span>
+                            <strong>Diagnóstico (3 dias):</strong> contato com responsáveis dos 5
+                            alunos com mais faltas.
+                          </span>
+                        </li>
+                        <li className="flex gap-2">
+                          <span className="text-primary">2.</span>
+                          <span>
+                            <strong>Ação imediata (1 semana):</strong> reunião com a equipe
+                            pedagógica e ajuste de rotina.
+                          </span>
+                        </li>
+                        <li className="flex gap-2">
+                          <span className="text-primary">3.</span>
+                          <span>
+                            <strong>Monitoramento (mensal):</strong> meta de recuperar 80% da
+                            frequência em 30 dias.
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  {/* User follow-up */}
+                  <div className="flex justify-end">
+                    <div className="max-w-[85%] text-sm rounded-2xl rounded-br-sm px-3.5 py-2 bg-primary text-primary-foreground">
+                      Pode registrar isso como plano oficial?
+                    </div>
+                  </div>
+                  {/* Typing */}
+                  <div className="flex justify-start">
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <span className="inline-flex gap-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.3s]" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.15s]" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce" />
+                      </span>
+                      Capelo está pensando…
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </section>

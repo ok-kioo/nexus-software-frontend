@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { AppBreadcrumb } from "@/components/AppBreadcrumb";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CapeloFAB } from "@/components/capelo/CapeloFAB";
 
 export default function AppLayout() {
   const location = useLocation();
@@ -36,6 +37,7 @@ export default function AppLayout() {
             </ErrorBoundary>
           </main>
           <OnboardingProvider />
+          <CapeloFAB />
         </div>
       </div>
     </SidebarProvider>
