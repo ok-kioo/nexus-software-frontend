@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { requestPasswordReset } from "@/lib/auth";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { friendlyAuthError } from "@/lib/authErrors";
 import { Loader2, MailCheck } from "lucide-react";
+import { AuthLayout } from "@/components/auth/AuthLayout";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const COOLDOWN_SECONDS = 30;
@@ -58,100 +58,91 @@ export default function EsqueciSenha() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm">
-        <Card className="shadow-xl">
-          <CardContent className="p-6 sm:p-8">
-            <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold">Recuperar senha</h1>
-              <p className="text-sm text-muted-foreground mt-2">
-                Enviaremos um link para você criar uma nova senha.
-              </p>
+    <AuthLayout
+      title={<h1 className="text-2xl font-bold">Recuperar senha</h1>}
+      subtitle="Enviaremos um link para você criar uma nova senha."
+    >
+      {sent ? (
+        <div className="space-y-4">
+          <div className="flex flex-col items-center gap-2 text-center">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <MailCheck className="h-6 w-6 text-primary" />
             </div>
-            {sent ? (
-              <div className="space-y-4">
-                <div className="flex flex-col items-center gap-2 text-center">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <MailCheck className="h-6 w-6 text-primary" />
-                  </div>
-                  <h2 className="text-base font-semibold">Verifique seu e-mail</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Se <strong className="text-foreground">{email}</strong> estiver cadastrado, você
-                    receberá um link em instantes. Verifique também a caixa de spam. O link expira
-                    em 1 hora.
-                  </p>
-                </div>
-                <Button
-                  onClick={handleResend}
-                  disabled={cooldown > 0 || submitting}
-                  variant="outline"
-                  className="w-full h-11"
-                >
-                  {submitting ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Reenviando…
-                    </span>
-                  ) : cooldown > 0 ? (
-                    `Reenviar em ${cooldown}s`
-                  ) : (
-                    "Reenviar e-mail"
-                  )}
-                </Button>
-                <div className="space-y-2 text-center text-sm">
-                  <Link to="/login" className="block text-primary font-medium hover:underline">
-                    Voltar ao login
-                  </Link>
-                  <p className="text-xs text-muted-foreground">
-                    Não recebeu nada? Peça a um administrador ou gestor para enviar um novo
-                    convite.
-                  </p>
-                </div>
-              </div>
+            <h2 className="text-base font-semibold">Verifique seu e-mail</h2>
+            <p className="text-sm text-muted-foreground">
+              Se <strong className="text-foreground">{email}</strong> estiver cadastrado, você
+              receberá um link em instantes. Verifique também a caixa de spam. O link expira
+              em 1 hora.
+            </p>
+          </div>
+          <Button
+            onClick={handleResend}
+            disabled={cooldown > 0 || submitting}
+            variant="outline"
+            className="w-full h-11"
+          >
+            {submitting ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Reenviando…
+              </span>
+            ) : cooldown > 0 ? (
+              `Reenviar em ${cooldown}s`
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-                <fieldset disabled={submitting} className="space-y-4 disabled:opacity-70">
-                  <div>
-                    <Label htmlFor="email">E-mail</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        if (emailError) setEmailError(null);
-                      }}
-                      required
-                      aria-invalid={!!emailError}
-                      className={`mt-1.5 bg-muted/30 h-11 ${
-                        emailError ? "border-destructive focus-visible:ring-destructive" : ""
-                      }`}
-                    />
-                    {emailError && (
-                      <p className="mt-1.5 text-xs text-destructive">{emailError}</p>
-                    )}
-                  </div>
-                  <Button type="submit" className="w-full h-11" disabled={submitting}>
-                    {submitting ? (
-                      <span className="inline-flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Enviando…
-                      </span>
-                    ) : (
-                      "Enviar link"
-                    )}
-                  </Button>
-                  <p className="text-center text-sm">
-                    <Link to="/login" className="text-primary font-medium hover:underline">
-                      Voltar ao login
-                    </Link>
-                  </p>
-                </fieldset>
-              </form>
+              "Reenviar e-mail"
             )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+          </Button>
+          <div className="space-y-2 text-center text-sm">
+            <Link to="/login" className="block text-primary font-medium hover:underline">
+              Voltar ao login
+            </Link>
+            <p className="text-xs text-muted-foreground">
+              Não recebeu nada? Peça a um administrador ou gestor para enviar um novo
+              convite.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <fieldset disabled={submitting} className="space-y-4 disabled:opacity-70">
+            <div>
+              <Label htmlFor="email">E-mail</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (emailError) setEmailError(null);
+                }}
+                required
+                aria-invalid={!!emailError}
+                className={`mt-1.5 bg-background/40 backdrop-blur-sm h-11 ${
+                  emailError ? "border-destructive focus-visible:ring-destructive" : ""
+                }`}
+              />
+              {emailError && (
+                <p className="mt-1.5 text-xs text-destructive">{emailError}</p>
+              )}
+            </div>
+            <Button type="submit" className="w-full h-11" disabled={submitting}>
+              {submitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Enviando…
+                </span>
+              ) : (
+                "Enviar link"
+              )}
+            </Button>
+            <p className="text-center text-sm">
+              <Link to="/login" className="text-primary font-medium hover:underline">
+                Voltar ao login
+              </Link>
+            </p>
+          </fieldset>
+        </form>
+      )}
+    </AuthLayout>
   );
 }
